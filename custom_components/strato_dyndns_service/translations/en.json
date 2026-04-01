@@ -1,0 +1,203 @@
+{
+  "title": "STRATO DynDNS Service",
+  "config": {
+    "step": {
+      "user": {
+        "title": "STRATO credentials",
+        "description": "Enter the STRATO DynDNS username and password. On the next wizard page, add all domains or subdomains together.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
+      },
+      "domains": {
+        "title": "Add domains and subdomains",
+        "description": "Add all STRATO DynDNS-enabled domains and subdomains here. Afterwards, each domain is configured individually.",
+        "data": {
+          "domains": "Domains and subdomains"
+        }
+      },
+      "configure_domain": {
+        "title": "Configure this domain",
+        "description": "Configure **{hostname}** ({position}/{total}). **IPv4 and IPv6** are selected by default.",
+        "data": {
+          "update_mode": "Update mode",
+          "enabled": "Enabled"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure STRATO DynDNS Service",
+        "description": "Adjust the STRATO DynDNS username and password. Afterwards, the same domain wizard opens again.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
+      },
+      "reconfigure_domains": {
+        "title": "Edit domains and subdomains",
+        "description": "Edit the complete list of configured domains and subdomains here. Afterwards, each domain is configured individually again.",
+        "data": {
+          "domains": "Domains and subdomains"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Please enter a username and password.",
+      "invalid_hostname": "Please enter a valid domain or subdomain.",
+      "duplicate_hostname": "This domain or subdomain has already been added.",
+      "no_domains": "Please add at least one valid domain or subdomain."
+    },
+    "abort": {
+      "already_configured": "STRATO DynDNS Service is already configured.",
+      "reconfigure_successful": "Reconfiguration was successful.",
+      "wrong_entry": "The selected entry does not match this setup."
+    },
+    "initiate_flow": {
+      "user": "Set up"
+    }
+  },
+  "selector": {
+    "update_mode": {
+      "options": {
+        "ipv4": "IPv4 only",
+        "ipv6": "IPv6 only",
+        "both": "IPv4 and IPv6"
+      }
+    },
+    "ip_version": {
+      "options": {
+        "auto": "Automatic based on the domain configuration",
+        "ipv4": "IPv4 only",
+        "ipv6": "IPv6 only"
+      }
+    },
+    "domains_input": {
+      "name": "Domains and subdomains"
+    }
+  },
+  "device": {
+    "configured_domain": {
+      "name": "{domain}"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "domain_response": {
+        "name": "Domain response",
+        "state": {
+          "911": "Temporary server error",
+          "abuse": "Blocked due to abuse",
+          "badagent": "Bad agent",
+          "badauth": "Authentication failed",
+          "dnserr": "DNS error",
+          "error": "Error",
+          "good": "Updated",
+          "nochg": "Unchanged",
+          "nohost": "Host not found",
+          "notfqdn": "Not a fully qualified domain",
+          "numhost": "Too many hosts",
+          "ok": "OK",
+          "timeout": "Timeout",
+          "unknown": "Unknown"
+        }
+      },
+      "domain_status": {
+        "name": "Status",
+        "state": {
+          "idle": "Idle",
+          "updated": "Updated",
+          "unchanged": "Unchanged",
+          "disabled": "Disabled",
+          "skipped": "Skipped",
+          "error": "Error"
+        }
+      },
+      "domain_update_mode": {
+        "name": "Update mode",
+        "state": {
+          "ipv4": "IPv4 only",
+          "ipv6": "IPv6 only",
+          "both": "IPv4 and IPv6"
+        }
+      },
+      "domain_current_ipv4": {
+        "name": "Current IPv4"
+      },
+      "domain_current_ipv6": {
+        "name": "Current IPv6"
+      },
+      "domain_last_update": {
+        "name": "Last update"
+      },
+      "domain_last_server_response": {
+        "name": "Last server response"
+      },
+      "service_webhook_url": {
+        "name": "Webhook URL"
+      },
+      "service_fritzbox_update_url": {
+        "name": "FRITZ!Box update URL"
+      },
+      "service_last_webhook_response": {
+        "name": "Last webhook response",
+        "state": {
+          "911": "Temporary server error",
+          "abuse": "Blocked due to abuse",
+          "badagent": "Bad agent",
+          "badauth": "Authentication failed",
+          "dnserr": "DNS error",
+          "error": "Error",
+          "good": "Updated",
+          "nochg": "Unchanged",
+          "nohost": "Host not found",
+          "notfqdn": "Not a fully qualified domain",
+          "numhost": "Too many hosts",
+          "ok": "OK",
+          "timeout": "Timeout",
+          "unknown": "Unknown"
+        }
+      },
+      "service_current_ipv4": {
+        "name": "Current IPv4"
+      },
+      "service_current_ipv6": {
+        "name": "Current IPv6"
+      },
+      "service_last_update": {
+        "name": "Last update"
+      },
+      "service_request_from": {
+        "name": "Request from"
+      }
+    },
+    "button": {
+      "update_ipv4": {
+        "name": "Update IPv4"
+      },
+      "update_ipv6": {
+        "name": "Update IPv6"
+      }
+    },
+    "switch": {
+      "domain_enabled_switch": {
+        "name": "Updates"
+      }
+    }
+  },
+  "services": {
+    "update_domains": {
+      "name": "Update domains",
+      "description": "Update one or more configured STRATO DynDNS domains and return the structured server response.",
+      "fields": {
+        "device_id": {
+          "name": "Domain devices",
+          "description": "Select one or more configured domain devices provided by this integration."
+        },
+        "ip_version": {
+          "name": "IP version",
+          "description": "Choose whether only IPv4, only IPv6, or the domain-specific automatic mode should be used."
+        }
+      }
+    }
+  }
+}

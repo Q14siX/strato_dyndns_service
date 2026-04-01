@@ -1,0 +1,54 @@
+blueprint:
+  name: STRATO DynDNS Service – Ausgewählte Domains aktualisieren
+  description: |
+    Aktualisiert ausgewählte Domain-Geräte der Integration „STRATO DynDNS Service“,
+    sobald die konfigurierten Auslöser eintreten.
+
+    Geeignet, um gezielt einzelne oder mehrere Domain-Geräte dieser Integration per
+    Home-Assistant-Automation zu aktualisieren. Die Aktualisierung wird über die
+    Action `strato_dyndns_service.update_domains` ausgelöst.
+  domain: automation
+  source_url: https://github.com/Q14siX/strato_dyndns_service/blob/main/blueprints/automation/strato_dyndns_service/de/update_selected_domains.yaml
+  input:
+    trigger_inputs:
+      name: Auslöser
+      description: Wähle einen oder mehrere Auslöser aus, die diese Automation starten sollen.
+      selector:
+        trigger: {}
+    domain_devices:
+      name: Domain-Geräte
+      description: Wähle die Domain-Geräte aus, die aktualisiert werden sollen.
+      selector:
+        device:
+          multiple: true
+          filter:
+            - integration: strato_dyndns_service
+              manufacturer: STRATO
+              model: Configured Domain
+    ip_version:
+      name: IP-Version
+      description: |
+        Lege fest, ob der domainspezifische Modus verwendet werden soll,
+        oder ob nur IPv4 bzw. nur IPv6 aktualisiert werden soll.
+      default: auto
+      selector:
+        select:
+          options:
+            - label: Automatisch gemäß Domain-Konfiguration
+              value: auto
+            - label: Nur IPv4
+              value: ipv4
+            - label: Nur IPv6
+              value: ipv6
+
+mode: single
+max_exceeded: silent
+
+trigger: !input trigger_inputs
+
+action:
+  - action: strato_dyndns_service.update_domains
+    target:
+      device_id: !input domain_devices
+    data:
+      ip_version: !input ip_version

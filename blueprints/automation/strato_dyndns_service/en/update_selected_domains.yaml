@@ -1,0 +1,54 @@
+blueprint:
+  name: STRATO DynDNS Service – Update selected domains
+  description: |
+    Update selected domain devices of the “STRATO DynDNS Service” integration
+    whenever the configured triggers fire.
+
+    This blueprint is useful to update one or more domain devices of this integration
+    through a regular Home Assistant automation. The update is executed by calling
+    the `strato_dyndns_service.update_domains` action.
+  domain: automation
+  source_url: https://github.com/Q14siX/strato_dyndns_service/blob/main/blueprints/automation/strato_dyndns_service/en/update_selected_domains.yaml
+  input:
+    trigger_inputs:
+      name: Triggers
+      description: Select one or more triggers that should start this automation.
+      selector:
+        trigger: {}
+    domain_devices:
+      name: Domain devices
+      description: Select the domain devices that should be updated.
+      selector:
+        device:
+          multiple: true
+          filter:
+            - integration: strato_dyndns_service
+              manufacturer: STRATO
+              model: Configured Domain
+    ip_version:
+      name: IP version
+      description: |
+        Choose whether the domain-specific mode should be used,
+        or whether only IPv4 or only IPv6 should be updated.
+      default: auto
+      selector:
+        select:
+          options:
+            - label: Automatic based on the domain configuration
+              value: auto
+            - label: IPv4 only
+              value: ipv4
+            - label: IPv6 only
+              value: ipv6
+
+mode: single
+max_exceeded: silent
+
+trigger: !input trigger_inputs
+
+action:
+  - action: strato_dyndns_service.update_domains
+    target:
+      device_id: !input domain_devices
+    data:
+      ip_version: !input ip_version
