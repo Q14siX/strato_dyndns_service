@@ -122,7 +122,7 @@ Das Hauptgerät zeigt instanzweite Informationen, technische URLs und globale Ta
 
 ## Installation über HACS
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Q14siX&repository=strato_dyndns_service)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Q14siX&repository=strato_dyndns_service&category=integration)
 
 ### Schritte
 
@@ -562,7 +562,7 @@ The main device exposes instance-wide information, technical URLs, and global bu
 
 ## Installation via HACS
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Q14siX&repository=strato_dyndns_service)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Q14siX&repository=strato_dyndns_service&category=integration)
 
 ### Steps
 
