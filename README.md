@@ -18,8 +18,6 @@
 
 STRATO DynDNS Service ist eine benutzerdefinierte Home-Assistant-Integration für den STRATO-DynDNS-Dienst. Sie wurde dafür entwickelt, mehrere STRATO-Domains und Subdomains komfortabel direkt in Home Assistant zu verwalten, gezielt oder gesammelt zu aktualisieren, per Webhook durch einen Router wie eine FRITZ!Box anzustoßen und die Ergebnisse nachvollziehbar in Geräten, Sensoren, Schaltern, Tastern, Services und Blueprints abzubilden.
 
-Diese README ist für die **Erstveröffentlichung** des Projekts geschrieben und daher bewusst sehr ausführlich. Sie dokumentiert die Funktion der Integration, die Einrichtungslogik, die Entitäten, die Service-Aktion, die Webhook-Nutzung, die Mehrfach-Instanzen, die Blueprints und die Repository-Struktur vollständig auf **Deutsch** und **Englisch**.
-
 ## Inhalt
 
 - [Validierung und Veröffentlichung](#validierung-und-veröffentlichung)
@@ -461,8 +459,6 @@ Dieses Repository enthält eine Lizenzdatei im Projektstamm. Bitte beachte die d
 [Zur deutschen Version](#strato-dyndns-service)
 
 STRATO DynDNS Service is a custom Home Assistant integration for the STRATO DynDNS service. It is designed to manage multiple STRATO domains and subdomains directly inside Home Assistant, trigger updates manually or in grouped form, accept router-driven webhook calls, and expose the result through devices, sensors, switches, buttons, services, and blueprints.
-
-This README is intentionally very detailed because it is meant for the **first public release** of the project. It documents the integration, its setup flow, entity model, service action, webhook behavior, multi-instance support, blueprints, and repository structure in **German** and **English**.
 
 ## Table of contents
 
