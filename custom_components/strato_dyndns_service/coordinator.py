@@ -672,8 +672,7 @@ class StratoDynDNSCoordinator(DataUpdateCoordinator[dict[str, DomainState]]):
         try:
             async with asyncio.timeout(30):
                 async with self._session.get(
-                    STRATO_UPDATE_BATCH_SIZE,
-    STRATO_UPDATE_URL,
+                    STRATO_UPDATE_URL,
                     params={"hostname": ",".join(hostnames), "myip": myip},
                     auth=BasicAuth(self._username, self._password),
                     headers={"User-Agent": DEFAULT_NAME},
