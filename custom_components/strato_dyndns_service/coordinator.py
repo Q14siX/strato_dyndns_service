@@ -72,6 +72,7 @@ from .const import (
     STATUS_SKIPPED,
     STATUS_UNCHANGED,
     STATUS_UPDATED,
+    STRATO_UPDATE_BATCH_SIZE,
     STRATO_UPDATE_URL,
     WEBHOOK_URL,
 )
@@ -466,7 +467,7 @@ class StratoDynDNSCoordinator(DataUpdateCoordinator[dict[str, DomainState]]):
         request_from: str | None = None,
         source: str = "router_webhook",
     ) -> tuple[str, dict[str, UpdateResult]]:
-        """Update all configured domains in up to three grouped STRATO requests."""
+        """Update all configured domains in grouped STRATO requests with batching."""
         public_ip_cache: dict[int, str | None] = {}
         grouped_hostnames = {
             MODE_IPV4: [
@@ -567,6 +568,13 @@ class StratoDynDNSCoordinator(DataUpdateCoordinator[dict[str, DomainState]]):
             )
         return results
 
+    @staticmethod
+    def _chunk_hostnames(hostnames: list[str], chunk_size: int = STRATO_UPDATE_BATCH_SIZE) -> list[list[str]]:
+        """Split hostnames into deterministic STRATO request batches."""
+        if chunk_size <= 0:
+            return [hostnames]
+        return [hostnames[index : index + chunk_size] for index in range(0, len(hostnames), chunk_size)]
+
     async def _async_apply_group_update(
         self,
         *,
@@ -576,32 +584,43 @@ class StratoDynDNSCoordinator(DataUpdateCoordinator[dict[str, DomainState]]):
         ipv6: str | None,
         source: str,
     ) -> dict[str, UpdateResult]:
-        """Apply one grouped STRATO update call and map each line back to a domain."""
-        response_lines = await self._async_call_strato_group(hostnames, myip)
+        """Apply grouped STRATO updates in batches and map each line back to a domain."""
         results: dict[str, UpdateResult] = {}
 
-        for index, hostname in enumerate(hostnames):
-            response_text = response_lines[index] if index < len(response_lines) else RESPONSE_911
-            response_code = self._response_code(response_text)
-            parsed_status = self._parse_status(response_code)
-            self._apply_state_from_response(hostname, response_text, ipv4=ipv4, ipv6=ipv6)
-            state = self._states[hostname]
+        for batch_number, batch_hostnames in enumerate(self._chunk_hostnames(hostnames), start=1):
+            if len(hostnames) > STRATO_UPDATE_BATCH_SIZE:
+                _LOGGER.debug(
+                    "Updating STRATO DynDNS batch %s for %s via %s: %s",
+                    batch_number,
+                    len(batch_hostnames),
+                    source,
+                    ",".join(batch_hostnames),
+                )
 
-            _LOGGER.debug(
-                "Updated STRATO DynDNS host %s via %s with result %s",
-                hostname,
-                source,
-                response_text,
-            )
+            response_lines = await self._async_call_strato_group(batch_hostnames, myip)
 
-            results[hostname] = UpdateResult(
-                hostname=hostname,
-                status=parsed_status,
-                response=response_text,
-                response_code=response_code,
-                ipv4=ipv4 or state.current_ipv4,
-                ipv6=ipv6 or state.current_ipv6,
-            )
+            for index, hostname in enumerate(batch_hostnames):
+                response_text = response_lines[index] if index < len(response_lines) else RESPONSE_911
+                response_code = self._response_code(response_text)
+                parsed_status = self._parse_status(response_code)
+                self._apply_state_from_response(hostname, response_text, ipv4=ipv4, ipv6=ipv6)
+                state = self._states[hostname]
+
+                _LOGGER.debug(
+                    "Updated STRATO DynDNS host %s via %s with result %s",
+                    hostname,
+                    source,
+                    response_text,
+                )
+
+                results[hostname] = UpdateResult(
+                    hostname=hostname,
+                    status=parsed_status,
+                    response=response_text,
+                    response_code=response_code,
+                    ipv4=ipv4 or state.current_ipv4,
+                    ipv6=ipv6 or state.current_ipv6,
+                )
 
         return results
 
@@ -653,7 +672,8 @@ class StratoDynDNSCoordinator(DataUpdateCoordinator[dict[str, DomainState]]):
         try:
             async with asyncio.timeout(30):
                 async with self._session.get(
-                    STRATO_UPDATE_URL,
+                    STRATO_UPDATE_BATCH_SIZE,
+    STRATO_UPDATE_URL,
                     params={"hostname": ",".join(hostnames), "myip": myip},
                     auth=BasicAuth(self._username, self._password),
                     headers={"User-Agent": DEFAULT_NAME},

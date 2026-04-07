@@ -56,6 +56,7 @@ Diese Integration verlagert die Steuerung nach Home Assistant und ergänzt den r
 - Standardvorgabe IPv4 und IPv6 für jede neue Domain
 - deutlich kürzerer Einrichtungsablauf ohne Einzelabfrage je Domain
 - gruppierte Aktualisierung über Taster, Service oder Webhook
+- große Domainmengen werden für STRATO automatisch in 10er-Pakete aufgeteilt
 - Rückmeldung der Serverantwort pro Domain
 - Wiederherstellung des letzten Zustands nach Neustarts
 - deutscher und englischer Sprachumfang für Integration und Blueprint
@@ -79,7 +80,9 @@ Die Integration unterstützt unter anderem:
 - Service-Aktion zur gezielten Aktualisierung ausgewählter Domain-Geräte
 - Webhook-Endpunkt je Instanz
 - strukturierte Verarbeitung von Sammelantworten des STRATO-Servers
+- automatische Batch-Verarbeitung in 10er-Gruppen für große Domainlisten
 - Zusammenfassung der schwerwiegendsten Antwort für Router-Aufrufer
+- automatische Aufteilung großer Webhook-Updates in mehrere 10er-Requests an STRATO mit gemeinsamer Endauswertung
 - Persistenz der letzten bekannten Werte über Neustarts
 
 ## Besondere Merkmale
@@ -203,6 +206,8 @@ Das Hauptgerät heißt immer **STRATO DynDNS Service**.
 
 Diese Taster aktualisieren alle Domains der Instanz, bei denen die jeweilige Adressfamilie per Domain-Schalter aktiviert ist.
 
+Sind sehr viele Domains konfiguriert, teilt die Integration die STRATO-Aufrufe automatisch in 10er-Pakete auf, sammelt zunächst alle Einzelantworten und meldet anschließend die schwerwiegendste Gesamtrückmeldung zurück. Dieses Verhalten gilt identisch für manuelle Hauptaktualisierungen, Services und Webhook-Aufrufe.
+
 ## Domain-Gerät
 
 Jede konfigurierte Domain oder Subdomain wird als eigenes Gerät angelegt.
@@ -279,19 +284,21 @@ Jede Instanz besitzt einen eigenen Webhook. Der Aufruf benötigt keine Domainlis
 
 ### Interne Gruppierung
 
-Pro Webhook-Lauf werden maximal drei STRATO-Anfragen erzeugt:
+Die Integration bildet pro Lauf zunächst bis zu drei logische Gruppen:
 
 1. alle Domains mit **nur IPv4**
 2. alle Domains mit **nur IPv6**
 3. alle Domains mit **IPv4 und IPv6**
 
-Wenn eine Gruppe leer ist, wird die entsprechende Anfrage nicht gestellt.
+Wenn eine Gruppe leer ist, wird sie übersprungen. Enthält eine Gruppe mehr als **10 Domains**, wird sie automatisch in mehrere STRATO-Anfragen mit jeweils höchstens 10 Domains zerlegt.
+
+Dadurch können bei einem einzelnen Webhook-Lauf mehr als drei STRATO-Anfragen entstehen. Die fachliche Gruppierung bleibt jedoch trotzdem eindeutig nach IPv4-only, IPv6-only und Dual-Stack getrennt.
 
 ### Antwortverarbeitung
 
-STRATO kann bei einer Sammelanfrage mehrere Antwortzeilen zurückgeben. Die Integration ordnet diese Antworten den jeweiligen Domains zu, aktualisiert die betroffenen Domain-Sensoren und ermittelt daraus eine einzige **schwerwiegendste** Gesamtantwort für den Webhook-Aufrufer.
+STRATO kann bei jeder Sammelanfrage mehrere Antwortzeilen zurückgeben. Die Integration ordnet diese Antworten den jeweiligen Domains zu, speichert die passende Einzelantwort pro Domain und wartet anschließend, bis **alle** Teilanfragen eines Laufs abgeschlossen sind. Erst danach wird daraus eine einzige **schwerwiegendste** Gesamtantwort für den Webhook-Aufrufer ermittelt.
 
-Damit erhält ein Router nur eine kompakte Rückmeldung, während Home Assistant die Detailinformationen pro Domain speichert.
+Damit erhält ein Router nur eine kompakte Rückmeldung, während Home Assistant die Detailinformationen pro Domain speichert. Das gleiche Auswertungsverhalten gilt auch für die globale Aktualisierung über das Hauptgerät.
 
 ## FRITZ!Box-Hinweise
 
@@ -715,19 +722,21 @@ Each instance has its own webhook. The webhook call does not need a domain list.
 
 ### Internal grouping
 
-Each webhook run can generate up to three STRATO requests:
+For each run, the integration first builds up to three logical groups:
 
 1. all domains with **IPv4 only**
 2. all domains with **IPv6 only**
 3. all domains with **IPv4 and IPv6**
 
-If a group is empty, that STRATO request is skipped.
+If a group is empty, it is skipped. If a group contains more than **10 domains**, it is automatically split into multiple STRATO requests with at most 10 domains each.
+
+Because of that, a single webhook run can produce more than three STRATO requests. The logical grouping still remains clearly separated into IPv4-only, IPv6-only, and dual-stack updates.
 
 ### Response handling
 
-STRATO may return multiple response lines for a grouped request. The integration assigns those responses back to the correct domains, updates the affected domain sensors, and then computes one single **worst** response for the webhook caller.
+STRATO may return multiple response lines for each grouped request. The integration assigns those responses back to the correct domains, stores the matching per-domain result, and then waits until **all** partial requests of the run have finished. Only after that does it compute one single **worst** overall response for the webhook caller.
 
-That means a router receives one compact reply, while Home Assistant still stores the details per domain.
+That means a router receives one compact reply, while Home Assistant still stores the details per domain. The same aggregation behavior also applies to the global update triggered on the main device.
 
 ## FRITZ!Box notes
 

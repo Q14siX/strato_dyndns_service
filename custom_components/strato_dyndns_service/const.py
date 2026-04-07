@@ -94,6 +94,7 @@ ENABLED_STATE_ENABLED = "enabled"
 ENABLED_STATE_DISABLED = "disabled"
 
 STRATO_UPDATE_URL = "https://dyndns.strato.com/nic/update"
+STRATO_UPDATE_BATCH_SIZE = 10
 PUBLIC_IPV4_DISCOVERY_URL = "https://api.ipify.org"
 PUBLIC_IPV6_DISCOVERY_URL = "https://api6.ipify.org"
 

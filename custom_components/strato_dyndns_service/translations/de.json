@@ -173,7 +173,7 @@
   "services": {
     "update_domains": {
       "name": "Domains aktualisieren",
-      "description": "Aktualisiert eine oder mehrere konfigurierte STRATO-DynDNS-Domains und gibt die strukturierte Serverantwort zurück.",
+      "description": "Aktualisiert eine oder mehrere konfigurierte STRATO-DynDNS-Domains, teilt größere Aktualisierungen automatisch in 10er-Pakete auf und gibt die strukturierte Gesamtantwort mit den zugehörigen Einzelergebnissen zurück.",
       "fields": {
         "device_id": {
           "name": "Domain-Geräte",
