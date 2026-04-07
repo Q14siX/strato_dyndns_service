@@ -52,8 +52,9 @@ Diese Integration verlagert die Steuerung nach Home Assistant und ergänzt den r
 - eigener Neukonfigurations-Wizard
 - mehrere Domains oder Subdomains pro Instanz
 - mehrere Instanzen im selben Home-Assistant-System
-- pro Domain eigener Modus für IPv4, IPv6 oder beides
-- pro Domain eigener Schalter für die Aktivierung
+- pro Domain eigene IPv4- und IPv6-Schalter
+- Standardvorgabe IPv4 und IPv6 für jede neue Domain
+- deutlich kürzerer Einrichtungsablauf ohne Einzelabfrage je Domain
 - gruppierte Aktualisierung über Taster, Service oder Webhook
 - Rückmeldung der Serverantwort pro Domain
 - Wiederherstellung des letzten Zustands nach Neustarts
@@ -64,17 +65,17 @@ Diese Integration verlagert die Steuerung nach Home Assistant und ergänzt den r
 Die Integration unterstützt unter anderem:
 
 - Verwaltung mehrerer STRATO-Domains und Subdomains
-- getrennte Konfiguration pro Domain
-- nur IPv4, nur IPv6 oder IPv4 und IPv6
+- getrennte Steuerung pro Domain über IPv4- und IPv6-Schalter
+- nur IPv4, nur IPv6, IPv4 und IPv6 oder vollständig deaktiviert
 - mehrere Instanzen der Integration parallel
 - pro Domain ein eigenes Gerät
 - pro Instanz ein eigenes Hauptgerät
-- pro Domain ein eigener Aktivierungs-Schalter
+- pro Domain zwei eigene Schalter für IPv4 und IPv6
 - pro Domain ein Hauptsensor mit der letzten STRATO-Antwort
 - pro Domain zusätzliche Diagnose-Sensoren
 - pro Instanz globale Diagnose-Sensoren
 - pro Instanz globale IPv4- und IPv6-Taster
-- pro Domain nur die Taster, die zum jeweiligen Modus passen
+- pro Domain immer ein IPv4- und ein IPv6-Taster, jeweils passend zur aktiven Adressfamilie verfügbar
 - Service-Aktion zur gezielten Aktualisierung ausgewählter Domain-Geräte
 - Webhook-Endpunkt je Instanz
 - strukturierte Verarbeitung von Sammelantworten des STRATO-Servers
@@ -104,9 +105,9 @@ Jede Instanz verwendet für das Hauptgerät bewusst denselben Anzeigenamen:
 
 Die interne Eindeutigkeit erfolgt über die Geräte-Identifikatoren. So bleibt die Darstellung sauber und konsistent, auch wenn mehrere Instanzen vorhanden sind.
 
-### 3. Eigener Schalter pro Domain
+### 3. Zwei direkte Schalter pro Domain
 
-Jede konfigurierte Domain besitzt einen separaten Schalter zur Aktivierung oder Deaktivierung. Der Zustand wird dauerhaft gespeichert. Eine deaktivierte Domain bleibt in der Konfiguration vorhanden, wird aber bei Aktualisierungen übersprungen.
+Jede konfigurierte Domain besitzt zwei eigene Schalter: einen für **IPv4** und einen für **IPv6**. Dadurch entscheidet der Nutzer direkt am Domain-Gerät, welche Adressfamilie aktualisiert werden soll. Sind beide Schalter aktiv, werden beide Adressfamilien aktualisiert. Ist nur einer aktiv, wird ausschließlich diese Adressfamilie aktualisiert. Sind beide deaktiviert, bleibt die Domain zwar konfiguriert, wird aber übersprungen.
 
 ### 4. Saubere Trennung von Hauptgerät und Domain-Geräten
 
@@ -141,7 +142,7 @@ Das Hauptgerät zeigt instanzweite Informationen, technische URLs und globale Ta
 
 ## Ersteinrichtung
 
-Die Ersteinrichtung ist mehrstufig aufgebaut.
+Die Ersteinrichtung ist bewusst kompakt gehalten.
 
 ### Schritt 1: STRATO-Zugangsdaten
 
@@ -151,27 +152,18 @@ Hier werden Benutzername und Passwort hinterlegt.
 
 Auf einer eigenen Wizard-Seite werden alle Domains oder Subdomains gesammelt hinzugefügt. Dieses Feld unterstützt mehrere Einträge direkt in derselben Ansicht.
 
-### Schritt 3: Einzelkonfiguration je Domain
-
-Für jede eingegebene Domain wird danach eine eigene Wizard-Seite angezeigt. Dort wird festgelegt:
-
-- ob nur IPv4 aktualisiert werden soll
-- ob nur IPv6 aktualisiert werden soll
-- ob IPv4 und IPv6 aktualisiert werden sollen
-- ob die Domain initial aktiviert oder deaktiviert sein soll
-
-Standardmäßig ist **IPv4 und IPv6** vorausgewählt.
+Danach ist die Einrichtung bereits abgeschlossen. Für jede neu hinzugefügte Domain sind **IPv4 und IPv6 standardmäßig aktiviert**. Welche Adressfamilie tatsächlich aktualisiert werden soll, wird anschließend direkt über die beiden Domain-Schalter festgelegt.
 
 ## Nachträgliche Bearbeitung
 
-Die Integration unterstützt eine spätere Bearbeitung über **Neukonfiguration**. Dabei wird derselbe Wizard erneut verwendet:
+Die Integration unterstützt eine spätere Bearbeitung über **Neukonfiguration**. Dabei können Sie:
 
 - Zugangsdaten bearbeiten
-- Domainliste ändern
-- pro Domain Modus ändern
-- pro Domain Startzustand ändern
+- die Domainliste ändern
+- neue Domains mit standardmäßig aktiviertem IPv4 und IPv6 hinzufügen
+- bestehende Domains beibehalten, ohne deren IPv4-/IPv6-Schalterstellung zu verlieren
 
-Zusätzlich kann die Aktivierung einer einzelnen Domain jederzeit direkt über den Domain-Schalter geändert werden.
+Die eigentliche Steuerung erfolgt danach direkt über die Domain-Schalter für IPv4 und IPv6. Ein separater Aktivierungs-Schalter pro Domain ist nicht mehr erforderlich.
 
 ## Mehrere Instanzen
 
@@ -209,7 +201,7 @@ Das Hauptgerät heißt immer **STRATO DynDNS Service**.
 - IPv4 aktualisieren
 - IPv6 aktualisieren
 
-Diese Taster aktualisieren alle aktivierten Domains der Instanz, die den jeweiligen Modus unterstützen.
+Diese Taster aktualisieren alle Domains der Instanz, bei denen die jeweilige Adressfamilie per Domain-Schalter aktiviert ist.
 
 ## Domain-Gerät
 
@@ -236,18 +228,21 @@ Der primäre Sensor trägt den Domainnamen als Entitätsnamen. Sein Zustand ents
 
 ### Schalter pro Domain
 
-Jede Domain besitzt einen Schalter:
+Jede Domain besitzt zwei Schalter:
 
-- Deutsch: **Aktualisierung**
-- Englisch: **Updates**
+- **IPv4**
+- **IPv6**
+
+Damit lässt sich pro Domain direkt festlegen, welche Adressfamilie aktualisiert werden soll. Sind beide Schalter deaktiviert, gilt die Domain praktisch als pausiert.
 
 ### Taster pro Domain
 
-Je nach Modus werden nur die passenden Taster angelegt:
+Jede Domain besitzt immer beide Taster:
 
-- Modus IPv4 → nur IPv4-Taster
-- Modus IPv6 → nur IPv6-Taster
-- Modus IPv4 und IPv6 → beide Taster
+- **IPv4 aktualisieren**
+- **IPv6 aktualisieren**
+
+Ein Taster ist nur dann verfügbar, wenn die jeweilige Adressfamilie für die Domain aktiviert ist.
 
 ## Service-Aktion
 
@@ -264,9 +259,9 @@ Die Action erwartet **Domain-Geräte**, nicht beliebige Entitäten. Damit ist di
 
 ### Verhalten
 
-- `auto` verwendet den pro Domain konfigurierten Modus
-- `ipv4` erzwingt IPv4-Updates für die ausgewählten Domains, soweit diese den Modus unterstützen
-- `ipv6` erzwingt IPv6-Updates für die ausgewählten Domains, soweit diese den Modus unterstützen
+- `auto` verwendet die pro Domain aktiven IPv4-/IPv6-Schalter
+- `ipv4` erzwingt IPv4-Updates für die ausgewählten Domains, sofern IPv4 dort aktiviert ist
+- `ipv6` erzwingt IPv6-Updates für die ausgewählten Domains, sofern IPv6 dort aktiviert ist
 
 ### Rückgabe
 
@@ -286,9 +281,9 @@ Jede Instanz besitzt einen eigenen Webhook. Der Aufruf benötigt keine Domainlis
 
 Pro Webhook-Lauf werden maximal drei STRATO-Anfragen erzeugt:
 
-1. alle aktivierten Domains mit **nur IPv4**
-2. alle aktivierten Domains mit **nur IPv6**
-3. alle aktivierten Domains mit **IPv4 und IPv6**
+1. alle Domains mit **nur IPv4**
+2. alle Domains mit **nur IPv6**
+3. alle Domains mit **IPv4 und IPv6**
 
 Wenn eine Gruppe leer ist, wird die entsprechende Anfrage nicht gestellt.
 
@@ -304,9 +299,10 @@ Am Hauptgerät steht eine FRITZ!Box-Update-URL als Diagnose-Sensor zur Verfügun
 
 Die Domainauswahl muss nicht im Router erfolgen. Die Integration übernimmt selbst:
 
-- welche Domains aktiv sind
-- welche Domains zu IPv4-only gehören
-- welche Domains zu IPv6-only gehören
+- bei welchen Domains IPv4 aktiviert ist
+- bei welchen Domains IPv6 aktiviert ist
+- welche Domains zur IPv4-only-Gruppe gehören
+- welche Domains zur IPv6-only-Gruppe gehören
 - welche Domains mit beiden Adressfamilien aktualisiert werden
 
 Dadurch bleibt die Router-Konfiguration schlank.
@@ -379,8 +375,8 @@ Die Integration stellt den letzten bekannten Zustand der relevanten Sensoren nac
 
 Mögliche Ursachen:
 
-- Domain-Schalter ist ausgeschaltet
-- Domain-Modus passt nicht zum angeforderten IP-Typ
+- sowohl IPv4 als auch IPv6 sind für die Domain deaktiviert
+- die angeforderte IP-Familie ist für diese Domain nicht aktiviert
 - falsche STRATO-Zugangsdaten
 - Domain ist bei STRATO nicht korrekt für DynDNS aktiviert
 - Home Assistant ist von außen nicht erreichbar
@@ -492,8 +488,9 @@ This integration moves the orchestration into Home Assistant and adds a clean Ho
 - dedicated reconfigure wizard
 - multiple domains or subdomains per instance
 - multiple instances within the same Home Assistant system
-- per-domain mode for IPv4, IPv6, or both
-- per-domain enable/disable switch
+- dedicated IPv4 and IPv6 switches per domain
+- IPv4 and IPv6 enabled by default for every new domain
+- much shorter setup flow without a separate domain-by-domain wizard
 - grouped updates via buttons, service, or webhook
 - per-domain server response tracking
 - restored state after Home Assistant restarts
@@ -504,17 +501,17 @@ This integration moves the orchestration into Home Assistant and adds a clean Ho
 The integration includes:
 
 - management of multiple STRATO domains and subdomains
-- separate configuration for each domain
-- IPv4 only, IPv6 only, or IPv4 and IPv6
+- separate per-domain control through IPv4 and IPv6 switches
+- IPv4 only, IPv6 only, IPv4 and IPv6, or fully disabled
 - multiple parallel integration instances
 - one dedicated device per domain
 - one main device per integration instance
-- one enable/disable switch per domain
+- two dedicated switches per domain for IPv4 and IPv6
 - one primary sensor per domain with the last STRATO response
 - additional diagnostic sensors per domain
 - global diagnostic sensors per instance
 - global IPv4 and IPv6 buttons per instance
-- only the buttons that make sense for each domain mode
+- both domain buttons are always present and become available according to the active IP family
 - a service action to update selected domain devices
 - one webhook endpoint per instance
 - structured parsing of grouped STRATO server responses
@@ -544,9 +541,9 @@ Every instance intentionally uses the same display name for the main device:
 
 The internal uniqueness is handled through device identifiers, so the visible name can stay clean and consistent.
 
-### 3. Dedicated switch per domain
+### 3. Two direct switches per domain
 
-Each configured domain has its own switch for enabling or disabling updates. The switch state is stored persistently. A disabled domain remains configured but will be skipped during update runs.
+Each configured domain has two dedicated switches: one for **IPv4** and one for **IPv6**. This lets the user decide directly on the domain device which address family should be updated. If both switches are on, both address families are updated. If only one switch is on, only that address family is updated. If both are off, the domain stays configured but is skipped.
 
 ### 4. Clean separation between the main device and domain devices
 
@@ -581,7 +578,7 @@ The main device exposes instance-wide information, technical URLs, and global bu
 
 ## Initial setup
 
-The setup wizard is intentionally split into multiple steps.
+The setup is intentionally compact.
 
 ### Step 1: STRATO credentials
 
@@ -591,27 +588,18 @@ Enter the DynDNS username and password.
 
 A dedicated wizard page collects all domains or subdomains together. The field supports multiple entries within the same view.
 
-### Step 3: Per-domain configuration
-
-A dedicated wizard page is then shown for each domain. On that page you choose:
-
-- whether only IPv4 should be updated
-- whether only IPv6 should be updated
-- whether both IPv4 and IPv6 should be updated
-- whether the domain should start enabled or disabled
-
-The default is **IPv4 and IPv6**.
+After that, the setup is already finished. For every newly added domain, **IPv4 and IPv6 are enabled by default**. The effective behavior is then adjusted directly through the two per-domain switches.
 
 ## Reconfiguration
 
-The integration supports later editing via **Reconfigure**. It reuses the same wizard logic:
+The integration supports later editing via **Reconfigure**. You can:
 
 - change credentials
 - change the domain list
-- change the mode for each domain
-- change the initial enabled state for each domain
+- add new domains with IPv4 and IPv6 enabled by default
+- keep existing domains without losing their IPv4/IPv6 switch state
 
-In addition, the enabled state of a single domain can always be changed directly through its domain switch.
+The effective control then happens directly through the IPv4 and IPv6 switches on each domain. A separate enable/disable switch is no longer required.
 
 ## Multiple instances
 
@@ -649,7 +637,7 @@ The main device is always called **STRATO DynDNS Service**.
 - Update IPv4
 - Update IPv6
 
-These buttons update all enabled domains of that instance that support the selected IP family.
+These buttons update all domains of that instance for which the selected IP family is enabled via the per-domain switches.
 
 ## Domain device
 
@@ -674,20 +662,23 @@ The primary sensor uses the domain name as the entity name. Its state is the las
 - Last update
 - Last server response
 
-### Switch per domain
+### Switches per domain
 
-Each domain has one switch:
+Each domain has two switches:
 
-- German: **Aktualisierung**
-- English: **Updates**
+- **IPv4**
+- **IPv6**
+
+This makes it possible to decide directly per domain which address family should be updated. If both switches are off, the domain is effectively paused.
 
 ### Buttons per domain
 
-Only the buttons that match the domain mode are created:
+Each domain always has both buttons:
 
-- IPv4 mode → only IPv4 button
-- IPv6 mode → only IPv6 button
-- IPv4 and IPv6 mode → both buttons
+- **Update IPv4**
+- **Update IPv6**
+
+A button is only available when the corresponding address family is enabled for that domain.
 
 ## Service action
 
@@ -704,9 +695,9 @@ The action expects **domain devices**, not arbitrary entities. That keeps the se
 
 ### Behavior
 
-- `auto` uses the mode configured for each domain
-- `ipv4` forces IPv4 updates for the selected domains where supported
-- `ipv6` forces IPv6 updates for the selected domains where supported
+- `auto` uses the active IPv4/IPv6 switches of each domain
+- `ipv4` forces IPv4 updates for the selected domains if IPv4 is enabled there
+- `ipv6` forces IPv6 updates for the selected domains if IPv6 is enabled there
 
 ### Return value
 
@@ -726,9 +717,9 @@ Each instance has its own webhook. The webhook call does not need a domain list.
 
 Each webhook run can generate up to three STRATO requests:
 
-1. all enabled domains with **IPv4 only**
-2. all enabled domains with **IPv6 only**
-3. all enabled domains with **IPv4 and IPv6**
+1. all domains with **IPv4 only**
+2. all domains with **IPv6 only**
+3. all domains with **IPv4 and IPv6**
 
 If a group is empty, that STRATO request is skipped.
 
@@ -744,7 +735,8 @@ A FRITZ!Box update URL template is exposed as a diagnostic sensor on the main de
 
 The router does not need to decide which domains should be updated. The integration handles:
 
-- which domains are enabled
+- for which domains IPv4 is enabled
+- for which domains IPv6 is enabled
 - which domains belong to the IPv4-only group
 - which domains belong to the IPv6-only group
 - which domains should be updated with both address families
@@ -819,8 +811,8 @@ The relevant sensors restore their last known values after Home Assistant restar
 
 Possible reasons:
 
-- the domain switch is turned off
-- the domain mode does not match the requested IP family
+- both IPv4 and IPv6 are disabled for the domain
+- the requested IP family is not enabled for that domain
 - wrong STRATO credentials
 - the domain is not correctly enabled for DynDNS at STRATO
 - Home Assistant is not reachable from the outside

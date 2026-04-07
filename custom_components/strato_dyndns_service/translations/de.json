@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "STRATO-Zugangsdaten",
-        "description": "Geben Sie den STRATO-DynDNS-Benutzernamen und das Passwort ein. Auf der nächsten Wizard-Seite fügen Sie alle Domains oder Subdomains gesammelt hinzu.",
+        "description": "Geben Sie den STRATO-DynDNS-Benutzernamen und das Passwort ein. Auf der nächsten Seite fügen Sie alle Domains oder Subdomains gesammelt hinzu. IPv4 und IPv6 sind danach für jede Domain standardmäßig aktiviert und können direkt über Schalter pro Domain angepasst werden.",
         "data": {
           "username": "Benutzername",
           "password": "Passwort"
@@ -12,22 +12,14 @@
       },
       "domains": {
         "title": "Domains und Subdomains hinzufügen",
-        "description": "Fügen Sie hier alle für STRATO DynDNS aktivierten Domains und Subdomains hinzu. Danach wird jede Domain einzeln konfiguriert.",
+        "description": "Fügen Sie hier alle für STRATO DynDNS aktivierten Domains und Subdomains hinzu. Die Einrichtung endet danach direkt, ohne dass jede Domain einzeln in einem weiteren Wizard-Schritt abgefragt wird.",
         "data": {
           "domains": "Domains und Subdomains"
         }
       },
-      "configure_domain": {
-        "title": "Diese Domain konfigurieren",
-        "description": "Konfigurieren Sie **{hostname}** ({position}/{total}). Standardmäßig ist **IPv4 und IPv6** ausgewählt.",
-        "data": {
-          "update_mode": "Aktualisierungsmodus",
-          "enabled": "Aktiviert"
-        }
-      },
       "reconfigure": {
         "title": "STRATO DynDNS Service neu konfigurieren",
-        "description": "Passen Sie den STRATO-DynDNS-Benutzernamen und das Passwort an. Anschließend öffnet sich derselbe Domain-Wizard erneut.",
+        "description": "Passen Sie den STRATO-DynDNS-Benutzernamen und das Passwort an. Anschließend bearbeiten Sie direkt die komplette Domainliste erneut.",
         "data": {
           "username": "Benutzername",
           "password": "Passwort"
@@ -35,7 +27,7 @@
       },
       "reconfigure_domains": {
         "title": "Domains und Subdomains bearbeiten",
-        "description": "Bearbeiten Sie hier die vollständige Liste der konfigurierten Domains und Subdomains. Danach wird jede Domain erneut einzeln konfiguriert.",
+        "description": "Bearbeiten Sie hier die vollständige Liste der konfigurierten Domains und Subdomains. IPv4 und IPv6 bleiben pro Domain erhalten, sofern die Domain bereits existiert, und können später direkt über die Domain-Schalter geändert werden.",
         "data": {
           "domains": "Domains und Subdomains"
         }
@@ -57,13 +49,6 @@
     }
   },
   "selector": {
-    "update_mode": {
-      "options": {
-        "ipv4": "Nur IPv4",
-        "ipv6": "Nur IPv6",
-        "both": "IPv4 und IPv6"
-      }
-    },
     "ip_version": {
       "options": {
         "auto": "Automatisch gemäß Domain-Konfiguration",
@@ -114,7 +99,8 @@
         "state": {
           "ipv4": "Nur IPv4",
           "ipv6": "Nur IPv6",
-          "both": "IPv4 und IPv6"
+          "both": "IPv4 und IPv6",
+          "none": "Deaktiviert"
         }
       },
       "domain_current_ipv4": {
@@ -176,8 +162,11 @@
       }
     },
     "switch": {
-      "domain_enabled_switch": {
-        "name": "Aktualisierung"
+      "domain_ipv4_switch": {
+        "name": "IPv4"
+      },
+      "domain_ipv6_switch": {
+        "name": "IPv6"
       }
     }
   },

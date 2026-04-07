@@ -7,7 +7,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import ATTR_DOMAIN, MODE_BOTH, MODE_IPV4, MODE_IPV6
+from .const import ATTR_DOMAIN, MODE_IPV4, MODE_IPV6
 from .entity import StratoDynDNSDomainEntity, StratoDynDNSServiceEntity
 
 
@@ -22,11 +22,9 @@ async def async_setup_entry(
         StratoDynDNSServiceUpdateButton(coordinator, MODE_IPV4),
         StratoDynDNSServiceUpdateButton(coordinator, MODE_IPV6),
     ]
-    for hostname, domain_config in coordinator.domain_configs.items():
-        if domain_config.update_mode in (MODE_IPV4, MODE_BOTH):
-            entities.append(StratoDynDNSDomainUpdateButton(coordinator, hostname, MODE_IPV4))
-        if domain_config.update_mode in (MODE_IPV6, MODE_BOTH):
-            entities.append(StratoDynDNSDomainUpdateButton(coordinator, hostname, MODE_IPV6))
+    for hostname in coordinator.domain_configs:
+        entities.append(StratoDynDNSDomainUpdateButton(coordinator, hostname, MODE_IPV4))
+        entities.append(StratoDynDNSDomainUpdateButton(coordinator, hostname, MODE_IPV6))
     async_add_entities(entities, update_before_add=False)
 
 
@@ -42,8 +40,11 @@ class StratoDynDNSDomainUpdateButton(StratoDynDNSDomainEntity, ButtonEntity):
 
     @property
     def available(self) -> bool:
-        """Return whether the domain is currently enabled."""
-        return super().available and bool(self.coordinator.get_state(self._hostname).enabled)
+        """Return whether this IP family is currently enabled."""
+        if not super().available:
+            return False
+        state = self.coordinator.get_state(self._hostname)
+        return bool(state.ipv4_enabled if self._ip_version == MODE_IPV4 else state.ipv6_enabled)
 
     async def async_press(self) -> None:
         """Trigger an on-demand update for one IP family."""

@@ -9,6 +9,8 @@ PLATFORMS: list[str] = ["sensor", "button", "switch"]
 CONF_DOMAINS = "domains"
 CONF_ENABLED = "enabled"
 CONF_HOSTNAME = "hostname"
+CONF_IPV4_ENABLED = "ipv4_enabled"
+CONF_IPV6_ENABLED = "ipv6_enabled"
 CONF_PASSWORD = "password"
 CONF_UPDATE_MODE = "update_mode"
 CONF_USERNAME = "username"
@@ -18,10 +20,11 @@ DATA_COORDINATORS = "coordinators"
 DATA_SERVICES_REGISTERED = "services_registered"
 DATA_VIEW_REGISTERED = "view_registered"
 
+MODE_NONE = "none"
 MODE_IPV4 = "ipv4"
 MODE_IPV6 = "ipv6"
 MODE_BOTH = "both"
-VALID_MODES = [MODE_IPV4, MODE_IPV6, MODE_BOTH]
+VALID_MODES = [MODE_NONE, MODE_IPV4, MODE_IPV6, MODE_BOTH]
 
 IP_VERSION_AUTO = "auto"
 IP_VERSION_OPTIONS = [IP_VERSION_AUTO, MODE_IPV4, MODE_IPV6]

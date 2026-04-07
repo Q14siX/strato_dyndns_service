@@ -15,6 +15,7 @@ except ImportError:  # pragma: no cover - fallback for older cores
     SupportsResponse = None
 
 from .const import (
+    CONF_DOMAINS,
     CONF_WEBHOOK_ID,
     DATA_COORDINATORS,
     DATA_SERVICES_REGISTERED,
@@ -28,7 +29,7 @@ from .const import (
     SERVICE_UPDATE_DOMAINS,
 )
 from .coordinator import StratoDynDNSCoordinator
-from .helpers import ensure_list, merged_entry_config
+from .helpers import build_domain_configs, ensure_list, merged_entry_config, serialize_domain_configs
 from .http import StratoDynDNSWebhookView
 
 
@@ -127,7 +128,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: StratoDynDNSConfigEntry
     return unload_ok
 
 
-async def async_reload_entry(hass: HomeAssistant, entry: StratoDynDNSConfigEntry) -> None:
+async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Reload the config entry when options change."""
     await hass.config_entries.async_reload(entry.entry_id)
 
@@ -138,6 +139,18 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     webhook_id = entry.data.get(CONF_WEBHOOK_ID)
     if webhook_id and entry.unique_id != webhook_id:
         updates["unique_id"] = str(webhook_id)
+
+    normalized_domains = serialize_domain_configs(build_domain_configs(entry.data))
+    if normalized_domains != entry.data.get(CONF_DOMAINS, []):
+        data = dict(entry.data)
+        data[CONF_DOMAINS] = normalized_domains
+        updates["data"] = data
+
+    if entry.version != 1:
+        updates["version"] = 1
+    if entry.minor_version != 6:
+        updates["minor_version"] = 6
+
     if updates:
         hass.config_entries.async_update_entry(entry, **updates)
     return True

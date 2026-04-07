@@ -17,34 +17,20 @@ from homeassistant.helpers.selector import (
 
 from .const import (
     CONF_DOMAINS,
-    CONF_ENABLED,
     CONF_HOSTNAME,
+    CONF_IPV4_ENABLED,
+    CONF_IPV6_ENABLED,
     CONF_PASSWORD,
-    CONF_UPDATE_MODE,
     CONF_USERNAME,
     CONF_WEBHOOK_ID,
     DEFAULT_NAME,
     DOMAIN,
-    MODE_BOTH,
-    MODE_IPV4,
-    MODE_IPV6,
 )
-from .helpers import ensure_list, is_valid_hostname, merged_entry_config, normalize_hostname
+from .helpers import build_domain_configs, ensure_list, is_valid_hostname, merged_entry_config, normalize_hostname
 
 CONF_DOMAINS_INPUT = "domains"
 FLOW_MODE_USER = "user"
 FLOW_MODE_RECONFIGURE = "reconfigure"
-
-
-def _update_mode_selector(default: str = MODE_BOTH) -> SelectSelector:
-    """Build a translated select selector for the update mode."""
-    return SelectSelector(
-        SelectSelectorConfig(
-            options=[MODE_IPV4, MODE_IPV6, MODE_BOTH],
-            mode=SelectSelectorMode.LIST,
-            translation_key="update_mode",
-        )
-    )
 
 
 def _domains_selector(default: list[str] | None = None) -> SelectSelector:
@@ -102,8 +88,7 @@ class _BaseDomainWizard:
     _password: str
     _pending_hostnames: list[str]
     _domains: list[dict[str, Any]]
-    _configure_index: int
-    _defaults_by_hostname: dict[str, dict[str, Any]]
+    _defaults_by_hostname: dict[str, dict[str, bool]]
     _webhook_id: str
     _flow_mode: str
     _existing_domains: list[dict[str, Any]]
@@ -114,7 +99,6 @@ class _BaseDomainWizard:
         self._password = ""
         self._pending_hostnames = []
         self._domains = []
-        self._configure_index = 0
         self._defaults_by_hostname = {}
         self._webhook_id = ""
         self._flow_mode = FLOW_MODE_USER
@@ -155,75 +139,45 @@ class _BaseDomainWizard:
         self._pending_hostnames = hostnames
         return errors, hostnames
 
-    def _start_domain_configuration(
+    def _prepare_domain_defaults(
         self,
         *,
         existing_domains: list[dict[str, Any]] | None,
         webhook_id: str | None,
         flow_mode: str,
     ) -> None:
-        """Store normalized wizard data before per-domain configuration."""
+        """Store normalized wizard data before building the final payload."""
         self._domains = []
-        self._configure_index = 0
         self._flow_mode = flow_mode
         self._existing_domains = list(existing_domains or [])
         self._webhook_id = webhook_id or secrets.token_urlsafe(24)
         self._defaults_by_hostname = {
-            normalize_hostname(item.get(CONF_HOSTNAME)): {
-                CONF_UPDATE_MODE: str(item.get(CONF_UPDATE_MODE, MODE_BOTH)).lower(),
-                CONF_ENABLED: bool(item.get(CONF_ENABLED, True)),
+            config.hostname: {
+                CONF_IPV4_ENABLED: bool(config.ipv4_enabled),
+                CONF_IPV6_ENABLED: bool(config.ipv6_enabled),
             }
-            for item in self._existing_domains
-            if normalize_hostname(item.get(CONF_HOSTNAME))
+            for config in build_domain_configs({CONF_DOMAINS: self._existing_domains})
         }
 
-    async def _async_next_domain_step(self):
-        """Continue to the per-domain configuration step."""
-        self._configure_index = 0
-        return await self.async_step_configure_domain()
-
-    async def async_step_configure_domain(self, user_input: dict[str, Any] | None = None):
-        """Configure one previously collected domain."""
-        hostname = self._pending_hostnames[self._configure_index]
-        defaults = self._defaults_by_hostname.get(
-            hostname,
-            {CONF_UPDATE_MODE: MODE_BOTH, CONF_ENABLED: True},
-        )
-
-        if user_input is not None:
-            self._domains.append(
+    def _build_domains_payload(self) -> list[dict[str, Any]]:
+        """Build the final domain payload with per-family toggles."""
+        payload: list[dict[str, Any]] = []
+        for hostname in self._pending_hostnames:
+            defaults = self._defaults_by_hostname.get(
+                hostname,
+                {
+                    CONF_IPV4_ENABLED: True,
+                    CONF_IPV6_ENABLED: True,
+                },
+            )
+            payload.append(
                 {
                     CONF_HOSTNAME: hostname,
-                    CONF_UPDATE_MODE: str(user_input[CONF_UPDATE_MODE]).lower(),
-                    CONF_ENABLED: bool(user_input[CONF_ENABLED]),
+                    CONF_IPV4_ENABLED: bool(defaults.get(CONF_IPV4_ENABLED, True)),
+                    CONF_IPV6_ENABLED: bool(defaults.get(CONF_IPV6_ENABLED, True)),
                 }
             )
-            self._configure_index += 1
-            if self._configure_index < len(self._pending_hostnames):
-                return await self.async_step_configure_domain()
-            return await self._async_finish_domain_configuration()
-
-        schema = vol.Schema(
-            {
-                vol.Required(
-                    CONF_UPDATE_MODE,
-                    default=defaults.get(CONF_UPDATE_MODE, MODE_BOTH),
-                ): _update_mode_selector(str(defaults.get(CONF_UPDATE_MODE, MODE_BOTH)).lower()),
-                vol.Required(
-                    CONF_ENABLED,
-                    default=bool(defaults.get(CONF_ENABLED, True)),
-                ): bool,
-            }
-        )
-        return self.async_show_form(
-            step_id="configure_domain",
-            data_schema=schema,
-            description_placeholders={
-                "hostname": hostname,
-                "position": str(self._configure_index + 1),
-                "total": str(len(self._pending_hostnames)),
-            },
-        )
+        return payload
 
 
 class StratoDynDNSServiceConfigFlow(
@@ -232,7 +186,7 @@ class StratoDynDNSServiceConfigFlow(
     """Handle a config flow for STRATO DynDNS Service."""
 
     VERSION = 1
-    MINOR_VERSION = 5
+    MINOR_VERSION = 6
 
     def __init__(self) -> None:
         """Initialize the config flow."""
@@ -263,15 +217,13 @@ class StratoDynDNSServiceConfigFlow(
         if user_input is not None:
             errors, hostnames = self._prepare_and_store_hostnames(user_input.get(CONF_DOMAINS_INPUT))
             if not errors and hostnames is not None:
-                flow_mode = self._flow_mode or FLOW_MODE_USER
-                existing_domains = self._existing_domains if flow_mode != FLOW_MODE_USER else []
-                webhook_id = self._webhook_id if flow_mode != FLOW_MODE_USER else None
-                self._start_domain_configuration(
-                    existing_domains=existing_domains,
-                    webhook_id=webhook_id,
-                    flow_mode=flow_mode,
+                self._prepare_domain_defaults(
+                    existing_domains=[],
+                    webhook_id=None,
+                    flow_mode=FLOW_MODE_USER,
                 )
-                return await self._async_next_domain_step()
+                self._domains = self._build_domains_payload()
+                return await self._async_finish_domain_configuration()
 
         return self.async_show_form(
             step_id="domains",
@@ -319,12 +271,13 @@ class StratoDynDNSServiceConfigFlow(
         if user_input is not None:
             errors, hostnames = self._prepare_and_store_hostnames(user_input.get(CONF_DOMAINS_INPUT))
             if not errors and hostnames is not None:
-                self._start_domain_configuration(
+                self._prepare_domain_defaults(
                     existing_domains=self._existing_domains,
                     webhook_id=self._webhook_id,
                     flow_mode=FLOW_MODE_RECONFIGURE,
                 )
-                return await self._async_next_domain_step()
+                self._domains = self._build_domains_payload()
+                return await self._async_finish_domain_configuration()
 
         return self.async_show_form(
             step_id="reconfigure_domains",
@@ -353,4 +306,3 @@ class StratoDynDNSServiceConfigFlow(
         await self.async_set_unique_id(self._webhook_id)
         self._abort_if_unique_id_configured()
         return self.async_create_entry(title=title, data=payload)
-

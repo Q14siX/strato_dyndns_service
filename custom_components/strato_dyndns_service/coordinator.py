@@ -32,6 +32,9 @@ from .const import (
     ATTR_STATUS,
     ATTR_UPDATE_MODE,
     ATTR_WEBHOOK_URL,
+    CONF_HOSTNAME,
+    CONF_IPV4_ENABLED,
+    CONF_IPV6_ENABLED,
     CONF_PASSWORD,
     CONF_USERNAME,
     CONF_WEBHOOK_ID,
@@ -102,8 +105,9 @@ class StratoDynDNSCoordinator(DataUpdateCoordinator[dict[str, DomainState]]):
         self._states: dict[str, DomainState] = {
             item.hostname: DomainState(
                 hostname=item.hostname,
-                update_mode=item.update_mode,
-                enabled=item.enabled,
+                ipv4_enabled=item.ipv4_enabled,
+                ipv6_enabled=item.ipv6_enabled,
+                status=STATUS_IDLE if item.enabled else STATUS_DISABLED,
             )
             for item in self.domain_configs.values()
         }
@@ -196,7 +200,7 @@ class StratoDynDNSCoordinator(DataUpdateCoordinator[dict[str, DomainState]]):
         seen: set[str] = set()
 
         for item in self.config_entry.data.get("domains", []):
-            hostname = normalize_hostname(item.get("hostname"))
+            hostname = normalize_hostname(item.get(CONF_HOSTNAME))
             if not hostname or hostname in seen:
                 continue
             config = self.domain_configs.get(hostname)
@@ -204,9 +208,9 @@ class StratoDynDNSCoordinator(DataUpdateCoordinator[dict[str, DomainState]]):
                 continue
             payload.append(
                 {
-                    "hostname": config.hostname,
-                    "update_mode": config.update_mode,
-                    "enabled": config.enabled,
+                    CONF_HOSTNAME: config.hostname,
+                    CONF_IPV4_ENABLED: bool(config.ipv4_enabled),
+                    CONF_IPV6_ENABLED: bool(config.ipv6_enabled),
                 }
             )
             seen.add(hostname)
@@ -216,9 +220,9 @@ class StratoDynDNSCoordinator(DataUpdateCoordinator[dict[str, DomainState]]):
                 continue
             payload.append(
                 {
-                    "hostname": config.hostname,
-                    "update_mode": config.update_mode,
-                    "enabled": config.enabled,
+                    CONF_HOSTNAME: config.hostname,
+                    CONF_IPV4_ENABLED: bool(config.ipv4_enabled),
+                    CONF_IPV6_ENABLED: bool(config.ipv6_enabled),
                 }
             )
 
@@ -230,22 +234,28 @@ class StratoDynDNSCoordinator(DataUpdateCoordinator[dict[str, DomainState]]):
         data["domains"] = self._build_entry_domains_payload()
         self.hass.config_entries.async_update_entry(self.config_entry, data=data)
 
-    async def async_set_domain_enabled(self, hostname: str, enabled: bool) -> None:
-        """Enable or disable one configured domain and persist the change."""
+    async def async_set_domain_family_enabled(self, hostname: str, ip_version: str, enabled: bool) -> None:
+        """Enable or disable one IP family for a configured domain and persist it."""
         config = self.domain_configs.get(hostname)
-        if config is None:
+        state = self._states.get(hostname)
+        if config is None or state is None:
             return
 
         enabled = bool(enabled)
-        if config.enabled == enabled and self._states[hostname].enabled == enabled:
+        if ip_version == MODE_IPV4:
+            if config.ipv4_enabled == enabled and state.ipv4_enabled == enabled:
+                return
+            config.ipv4_enabled = enabled
+            state.ipv4_enabled = enabled
+        elif ip_version == MODE_IPV6:
+            if config.ipv6_enabled == enabled and state.ipv6_enabled == enabled:
+                return
+            config.ipv6_enabled = enabled
+            state.ipv6_enabled = enabled
+        else:
             return
 
-        config.enabled = enabled
-        state = self._states[hostname]
-        state.enabled = enabled
-        state.update_mode = config.update_mode
-
-        if enabled:
+        if state.enabled:
             if state.status == STATUS_DISABLED:
                 state.status = STATUS_IDLE
         else:
@@ -298,8 +308,8 @@ class StratoDynDNSCoordinator(DataUpdateCoordinator[dict[str, DomainState]]):
                 continue
 
             state = self._states[hostname]
-            state.enabled = domain_config.enabled
-            state.update_mode = domain_config.update_mode
+            state.ipv4_enabled = domain_config.ipv4_enabled
+            state.ipv6_enabled = domain_config.ipv6_enabled
 
             if not domain_config.enabled:
                 state.status = STATUS_DISABLED
@@ -313,24 +323,23 @@ class StratoDynDNSCoordinator(DataUpdateCoordinator[dict[str, DomainState]]):
                 )
                 continue
 
-            do_ipv4 = False
-            do_ipv6 = False
-
             if ip_version == MODE_IPV4:
-                do_ipv4 = domain_config.update_mode in (MODE_IPV4, MODE_BOTH)
+                do_ipv4 = domain_config.ipv4_enabled
+                do_ipv6 = False
             elif ip_version == MODE_IPV6:
-                do_ipv6 = domain_config.update_mode in (MODE_IPV6, MODE_BOTH)
+                do_ipv4 = False
+                do_ipv6 = domain_config.ipv6_enabled
             else:
-                do_ipv4 = domain_config.update_mode in (MODE_IPV4, MODE_BOTH)
-                do_ipv6 = domain_config.update_mode in (MODE_IPV6, MODE_BOTH)
+                do_ipv4 = domain_config.ipv4_enabled
+                do_ipv6 = domain_config.ipv6_enabled
 
             if not do_ipv4 and not do_ipv6:
-                state.status = STATUS_SKIPPED
+                state.status = STATUS_DISABLED
                 results[hostname] = UpdateResult(
                     hostname=hostname,
-                    status=STATUS_SKIPPED,
-                    response=RESPONSE_SKIPPED,
-                    response_code=RESPONSE_SKIPPED,
+                    status=STATUS_DISABLED,
+                    response=RESPONSE_DISABLED,
+                    response_code=RESPONSE_DISABLED,
                     ipv4=state.current_ipv4,
                     ipv6=state.current_ipv6,
                 )
@@ -406,10 +415,8 @@ class StratoDynDNSCoordinator(DataUpdateCoordinator[dict[str, DomainState]]):
         hostnames = [
             hostname
             for hostname, config in self.domain_configs.items()
-            if config.enabled and (
-                (ip_version == MODE_IPV4 and config.update_mode in (MODE_IPV4, MODE_BOTH))
-                or (ip_version == MODE_IPV6 and config.update_mode in (MODE_IPV6, MODE_BOTH))
-            )
+            if (ip_version == MODE_IPV4 and config.ipv4_enabled)
+            or (ip_version == MODE_IPV6 and config.ipv6_enabled)
         ]
         if not hostnames:
             return RESPONSE_UNKNOWN, {}
@@ -465,17 +472,17 @@ class StratoDynDNSCoordinator(DataUpdateCoordinator[dict[str, DomainState]]):
             MODE_IPV4: [
                 hostname
                 for hostname, config in self.domain_configs.items()
-                if config.enabled and config.update_mode == MODE_IPV4
+                if config.ipv4_enabled and not config.ipv6_enabled
             ],
             MODE_IPV6: [
                 hostname
                 for hostname, config in self.domain_configs.items()
-                if config.enabled and config.update_mode == MODE_IPV6
+                if config.ipv6_enabled and not config.ipv4_enabled
             ],
             MODE_BOTH: [
                 hostname
                 for hostname, config in self.domain_configs.items()
-                if config.enabled and config.update_mode == MODE_BOTH
+                if config.ipv4_enabled and config.ipv6_enabled
             ],
         }
         results: dict[str, UpdateResult] = {}
@@ -483,8 +490,8 @@ class StratoDynDNSCoordinator(DataUpdateCoordinator[dict[str, DomainState]]):
 
         for hostname, domain_config in self.domain_configs.items():
             state = self._states[hostname]
-            state.enabled = domain_config.enabled
-            state.update_mode = domain_config.update_mode
+            state.ipv4_enabled = domain_config.ipv4_enabled
+            state.ipv6_enabled = domain_config.ipv6_enabled
             if not domain_config.enabled:
                 state.status = STATUS_DISABLED
 

@@ -6,7 +6,16 @@ import ipaddress
 import re
 from collections.abc import Iterable
 
-from .const import CONF_DOMAINS, VALID_MODES
+from .const import (
+    CONF_DOMAINS,
+    CONF_ENABLED,
+    CONF_IPV4_ENABLED,
+    CONF_IPV6_ENABLED,
+    CONF_UPDATE_MODE,
+    MODE_BOTH,
+    MODE_IPV4,
+    MODE_IPV6,
+)
 from .models import DomainConfig
 
 _HOSTNAME_RE = re.compile(
@@ -28,6 +37,19 @@ def normalize_hostname(value: str | None) -> str:
     return (value or "").strip().rstrip(".").lower()
 
 
+def _legacy_family_flags(item: dict) -> tuple[bool, bool]:
+    """Map legacy enabled/update_mode fields to per-family flags."""
+    if not bool(item.get(CONF_ENABLED, True)):
+        return False, False
+
+    update_mode = str(item.get(CONF_UPDATE_MODE, MODE_BOTH)).lower()
+    if update_mode == MODE_IPV4:
+        return True, False
+    if update_mode == MODE_IPV6:
+        return False, True
+    return True, True
+
+
 def build_domain_configs(entry_data: dict) -> list[DomainConfig]:
     """Create typed domain configs from config entry data."""
     domains: list[DomainConfig] = []
@@ -35,17 +57,33 @@ def build_domain_configs(entry_data: dict) -> list[DomainConfig]:
         hostname = normalize_hostname(item.get("hostname"))
         if not hostname:
             continue
-        update_mode = str(item.get("update_mode", "both")).lower()
-        if update_mode not in VALID_MODES:
-            update_mode = "both"
+
+        if CONF_IPV4_ENABLED in item or CONF_IPV6_ENABLED in item:
+            ipv4_enabled = bool(item.get(CONF_IPV4_ENABLED, True))
+            ipv6_enabled = bool(item.get(CONF_IPV6_ENABLED, True))
+        else:
+            ipv4_enabled, ipv6_enabled = _legacy_family_flags(item)
+
         domains.append(
             DomainConfig(
                 hostname=hostname,
-                update_mode=update_mode,
-                enabled=bool(item.get("enabled", True)),
+                ipv4_enabled=ipv4_enabled,
+                ipv6_enabled=ipv6_enabled,
             )
         )
     return domains
+
+
+def serialize_domain_configs(domain_configs: Iterable[DomainConfig]) -> list[dict]:
+    """Serialize typed domain configs back to config-entry payloads."""
+    return [
+        {
+            "hostname": config.hostname,
+            CONF_IPV4_ENABLED: bool(config.ipv4_enabled),
+            CONF_IPV6_ENABLED: bool(config.ipv6_enabled),
+        }
+        for config in domain_configs
+    ]
 
 
 def merged_entry_config(entry) -> dict:

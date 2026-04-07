@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "STRATO credentials",
-        "description": "Enter the STRATO DynDNS username and password. On the next wizard page, add all domains or subdomains together.",
+        "description": "Enter the STRATO DynDNS username and password. On the next page, add all domains or subdomains together. IPv4 and IPv6 are then enabled by default for every domain and can be adjusted directly through per-domain switches.",
         "data": {
           "username": "Username",
           "password": "Password"
@@ -12,22 +12,14 @@
       },
       "domains": {
         "title": "Add domains and subdomains",
-        "description": "Add all STRATO DynDNS-enabled domains and subdomains here. Afterwards, each domain is configured individually.",
+        "description": "Add all STRATO DynDNS-enabled domains and subdomains here. The setup then finishes directly, without asking you to configure every domain in another wizard step.",
         "data": {
           "domains": "Domains and subdomains"
         }
       },
-      "configure_domain": {
-        "title": "Configure this domain",
-        "description": "Configure **{hostname}** ({position}/{total}). **IPv4 and IPv6** are selected by default.",
-        "data": {
-          "update_mode": "Update mode",
-          "enabled": "Enabled"
-        }
-      },
       "reconfigure": {
         "title": "Reconfigure STRATO DynDNS Service",
-        "description": "Adjust the STRATO DynDNS username and password. Afterwards, the same domain wizard opens again.",
+        "description": "Adjust the STRATO DynDNS username and password. Afterwards, edit the complete domain list directly again.",
         "data": {
           "username": "Username",
           "password": "Password"
@@ -35,7 +27,7 @@
       },
       "reconfigure_domains": {
         "title": "Edit domains and subdomains",
-        "description": "Edit the complete list of configured domains and subdomains here. Afterwards, each domain is configured individually again.",
+        "description": "Edit the complete list of configured domains and subdomains here. IPv4 and IPv6 remain preserved for existing domains and can later be changed directly through the domain switches.",
         "data": {
           "domains": "Domains and subdomains"
         }
@@ -57,13 +49,6 @@
     }
   },
   "selector": {
-    "update_mode": {
-      "options": {
-        "ipv4": "IPv4 only",
-        "ipv6": "IPv6 only",
-        "both": "IPv4 and IPv6"
-      }
-    },
     "ip_version": {
       "options": {
         "auto": "Automatic based on the domain configuration",
@@ -114,7 +99,8 @@
         "state": {
           "ipv4": "IPv4 only",
           "ipv6": "IPv6 only",
-          "both": "IPv4 and IPv6"
+          "both": "IPv4 and IPv6",
+          "none": "Disabled"
         }
       },
       "domain_current_ipv4": {
@@ -176,8 +162,11 @@
       }
     },
     "switch": {
-      "domain_enabled_switch": {
-        "name": "Updates"
+      "domain_ipv4_switch": {
+        "name": "IPv4"
+      },
+      "domain_ipv6_switch": {
+        "name": "IPv6"
       }
     }
   },
