@@ -14,6 +14,10 @@
   <img src="https://raw.githubusercontent.com/Q14siX/strato_dyndns_service/main/custom_components/strato_dyndns_service/brand/icon.png" alt="STRATO DynDNS Service icon" width="128">
 </p>
 
+<p align="center">
+  <a href="https://buymeacoffee.com/q14six"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" width="200"></a>
+</p>
+
 [English version](#english)
 
 STRATO DynDNS Service ist eine benutzerdefinierte Home-Assistant-Integration für den STRATO-DynDNS-Dienst. Sie wurde dafür entwickelt, mehrere STRATO-Domains und Subdomains komfortabel direkt in Home Assistant zu verwalten, gezielt oder gesammelt zu aktualisieren, per Webhook durch einen Router wie eine FRITZ!Box anzustoßen und die Ergebnisse nachvollziehbar in Geräten, Sensoren, Schaltern, Tastern, Services und Blueprints abzubilden.
